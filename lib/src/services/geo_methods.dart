@@ -27,6 +27,8 @@ class GeoMethods {
   /// City to filter address results.
   final String city;
 
+  final List<String> countryCodes;
+
   /// By default, directions are calculated as `driving` directions. It can also be `walking`, `bicycling`, `transit`. See [documentation](https://developers.google.com/maps/documentation/directions/overview#TravelModes).
   final String mode;
 
@@ -35,14 +37,13 @@ class GeoMethods {
     @required this.googleApiKey,
     @required this.language,
     @required this.countryCode,
-    @required this.country,
-    @required this.city,
+    this.country,
+    this.city,
+    this.countryCodes,
     this.mode = 'driving',
   })  : assert(googleApiKey != null),
         assert(language != null),
         assert(countryCode != null),
-        assert(country != null),
-        assert(city != null),
         assert(mode != null);
 
   /// Calls AutoComplete of Google Place API sending a `query`.
@@ -50,8 +51,11 @@ class GeoMethods {
   Future<List<Address>> autocompletePlace({@required String query}) async {
     if (query.isEmpty) return <Address>[];
     query = query.replaceAll(RegExp(r' '), '%20');
+    final countryString = country.isEmpty ? '' : ',%20$country';
+    final cityString = city.isEmpty ? '' : ',%20$city';
+    final countriesString = countryCodes.map((c) => 'country:$c').join('|');
     final url =
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query,%20$city,%20$country&language=$language&components=country:$countryCode&key=$googleApiKey';
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query$cityString$countryString&language=$language&components=$countriesString&key=$googleApiKey';
     try {
       final response = await http.get(url);
       final list = List<Address>();
